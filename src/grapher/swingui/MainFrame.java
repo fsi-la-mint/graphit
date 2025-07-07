@@ -30,10 +30,9 @@ public class MainFrame extends JFrame {
         tabbedPane.setSelectedComponent(matrixPanel);
     }
 
-
     public void showGraph(AbstractGraph graph) {
         GraphPanel matrixPanel = new GraphPanel(graph);
-        tabbedPane.addTab("Adjazenzmatrix", matrixPanel);
+        tabbedPane.addTab("Graph Visualization", matrixPanel);
         tabbedPane.setSelectedComponent(matrixPanel);
     }
 }
