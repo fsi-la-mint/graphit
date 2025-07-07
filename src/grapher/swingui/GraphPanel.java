@@ -7,6 +7,7 @@ import java.awt.event.*;
 import java.util.*;
 
 import grapher.interfaces.adj.AbstractGraph;
+import grapher.logic.graph.VNode;
 
 public class GraphPanel extends JPanel {
     private java.util.List<VNode> nodes = new ArrayList<>();
@@ -72,21 +73,4 @@ public class GraphPanel extends JPanel {
 
     }
 
-}
-
-class VNode {
-    public int x, y, radius = 20;
-    public String name;
-
-    public VNode(String name, int x, int y) {
-        this.name = name;
-        this.x = x;
-        this.y = y;
-    }
-
-    public boolean contains(int mx, int my) {
-        int dx = x - mx;
-        int dy = y - my;
-        return dx * dx + dy * dy <= radius * radius;
-    }
 }
