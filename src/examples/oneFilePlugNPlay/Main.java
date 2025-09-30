@@ -1,5 +1,3 @@
-package examples.oneFilePlugNPlay;
-
 public class Main {
     public static void main(String[] args) {
 
@@ -9,9 +7,9 @@ public class Main {
         graph.getMatrix()[2][0] = 4;
         graph.getMatrix()[3][5] = 12;
 
-        MainFrame frame = new MainFrame();
-        frame.showAdjazenzmatrix(graph);
-        frame.showGraph(graph);
+        Graphit graphit = new Graphit();
+        graphit.showAdjazenzmatrix(graph);
+        graphit.showGraph(graph);
     }
 
 }

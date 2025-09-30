@@ -6,12 +6,49 @@ import java.awt.event.*;
 import java.util.*;
 import javax.swing.*;
 
-public abstract class AbstractGraph {
+public class Graphit extends JFrame {
+
+    private JTabbedPane tabbedPane;
+
+    public Graphit() {
+        super("Graphit | Learning Graphs");
+        setSize(500, 500);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        tabbedPane = new JTabbedPane();
+        getContentPane().add(tabbedPane);
+
+        // Optionally, add an initial tab
+        JPanel home = new JPanel();
+        home.add(new JLabel("Welcome to Graphit!"));
+        tabbedPane.addTab("Home", home);
+
+        setVisible(true);
+    }
+
+    public void showAdjazenzmatrix(AbstractGraph graph) {
+        AdjazenzmatrixPanel matrixPanel = new AdjazenzmatrixPanel(graph);
+        tabbedPane.addTab("Adjazenzmatrix", matrixPanel);
+        tabbedPane.setSelectedComponent(matrixPanel);
+    }
+
+    public void showGraph(AbstractGraph graph) {
+        GraphPanel matrixPanel = new GraphPanel(graph);
+        tabbedPane.addTab("Adjazenzmatrix", matrixPanel);
+        tabbedPane.setSelectedComponent(matrixPanel);
+    }
+}
+
+abstract class AbstractGraph {
 
     public final int[][] exportMatrix() {
 
         return new int[0][0];
     }
+}
+
+interface ITest {
+
 }
 
 class AdjazenzmatrixPanel extends JPanel {
@@ -148,38 +185,5 @@ class VNode {
         int dx = x - mx;
         int dy = y - my;
         return dx * dx + dy * dy <= radius * radius;
-    }
-}
-
-class Graphit extends JFrame {
-
-    private JTabbedPane tabbedPane;
-
-    public Graphit() {
-        super("Graphit | Learning Graphs");
-        setSize(500, 500);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        tabbedPane = new JTabbedPane();
-        getContentPane().add(tabbedPane);
-
-        // Optionally, add an initial tab
-        JPanel home = new JPanel();
-        home.add(new JLabel("Welcome to Graphit!"));
-        tabbedPane.addTab("Home", home);
-
-        setVisible(true);
-    }
-
-    public void showAdjazenzmatrix(AbstractGraph graph) {
-        AdjazenzmatrixPanel matrixPanel = new AdjazenzmatrixPanel(graph);
-        tabbedPane.addTab("Adjazenzmatrix", matrixPanel);
-        tabbedPane.setSelectedComponent(matrixPanel);
-    }
-
-    public void showGraph(AbstractGraph graph) {
-        GraphPanel matrixPanel = new GraphPanel(graph);
-        tabbedPane.addTab("Adjazenzmatrix", matrixPanel);
-        tabbedPane.setSelectedComponent(matrixPanel);
     }
 }

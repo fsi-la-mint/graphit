@@ -1,5 +1,3 @@
-package examples.oneFilePlugNPlay;
-
 public class AdjGraph extends AbstractGraph {
     private int[][] matrix;
 

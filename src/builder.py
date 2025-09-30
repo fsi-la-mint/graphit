@@ -23,6 +23,7 @@ def combine_java_classes(folder, public_class_file, output_folders):
     public_class_path = os.path.abspath(public_class_file)
     if not os.path.isfile(public_class_path):
         raise ValueError(f"Public class file {public_class_file} not found.")
+    print("private class path:", public_class_path)
 
     # Ensure public class comes first
     java_files_sorted = [public_class_path] + \
@@ -59,6 +60,10 @@ def combine_java_classes(folder, public_class_file, output_folders):
             # Remove 'public' from top-level classes
             content_no_public = re.sub(
                 r'\bpublic\s+class\b', 'class', content_no_imports)
+            content_no_public = re.sub(
+                r'\bpublic\s+abstract\s+class\b', 'abstract class', content_no_public)
+            content_no_public = re.sub(
+                r'\bpublic\s+interface\b', 'interface', content_no_public)
             class_bodies.append(content_no_public.strip())
 
     # Build final content
@@ -84,7 +89,7 @@ if __name__ == "__main__":
     parser.add_argument("--folder", default="graphit",
                         help="Folder to traverse recursively")
     parser.add_argument(
-        "--public", default="graphit/Graphit.java", help="Path to public class file")
+        "--public", default="graphit/swingui/Graphit.java", help="Path to public class file")
     parser.add_argument(
         "--out",
         default=["./examples/oneFilePlugNPlay"],  # wrap default in a list
