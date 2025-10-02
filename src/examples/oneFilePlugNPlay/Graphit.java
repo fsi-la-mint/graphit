@@ -4,13 +4,16 @@ import java.awt.*;
 import java.awt.Dimension;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.Point;
 import java.awt.event.*;
+import java.awt.event.ActionEvent;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
 public class Graphit extends JFrame {
 
@@ -46,6 +49,15 @@ public class Graphit extends JFrame {
         this.currentGraphPanel = graphPanel;
         tabbedPane.addTab("Graph", graphPanel);
         tabbedPane.setSelectedComponent(graphPanel);
+    }
+
+    public void showTraversal(AbstractGraph graph) {
+        TraversalPanel traversalPanel = new TraversalPanel(graph);
+        if (currentEngine != null) {
+            traversalPanel.setLayoutEngine(currentEngine);
+        }
+        tabbedPane.addTab("Traversal", traversalPanel);
+        tabbedPane.setSelectedComponent(traversalPanel);
     }
 
     // API: select engines
@@ -187,6 +199,9 @@ class GraphPanel extends JPanel {
     private VNode dragged = null;
     private int offsetX, offsetY;
     private LayoutEngine layoutEngine;
+    // Traversal visualization state
+    private final java.util.Set<Integer> visited = new java.util.HashSet<>();
+    private Integer currentNodeIndex = null;
     // private java.util.List<int[]> edges = new ArrayList<>();
 
     public GraphPanel(AbstractGraph graph) {
@@ -280,6 +295,27 @@ class GraphPanel extends JPanel {
         }
     }
 
+    // Traversal controls
+    public void setTraversalState(java.util.List<Integer> track, int timeIndex) {
+        visited.clear();
+        currentNodeIndex = null;
+        if (track != null) {
+            for (int i = 0; i < track.size(); i++) {
+                Integer idx = track.get(i);
+                if (idx == null) continue;
+                if (i < timeIndex) visited.add(idx);
+                else if (i == timeIndex) currentNodeIndex = idx;
+            }
+        }
+        repaint();
+    }
+
+    public void clearTraversalState() {
+        visited.clear();
+        currentNodeIndex = null;
+        repaint();
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -303,9 +339,16 @@ class GraphPanel extends JPanel {
                 }
             }
 
-            // Draw nodes
-            for (VNode node : nodes) {
-                g2.setColor(Color.BLUE);
+            // Draw nodes with traversal coloring
+            for (int idx = 0; idx < nodes.size(); idx++) {
+                VNode node = nodes.get(idx);
+                Color fill = Color.BLUE;
+                if (currentNodeIndex != null && idx == currentNodeIndex.intValue()) {
+                    fill = new Color(0x80, 0x00, 0x80); // purple for current
+                } else if (visited.contains(idx)) {
+                    fill = new Color(0x00, 0x64, 0x00); // dark green for visited
+                }
+                g2.setColor(fill);
                 g2.fillOval(node.x - node.radius, node.y - node.radius, node.radius * 2, node.radius * 2);
                 g2.setColor(Color.WHITE);
                 g2.drawString(node.name, node.x - 5, node.y + 5);
@@ -317,6 +360,7 @@ class GraphPanel extends JPanel {
     }
 
 }
+
 
 class VNode {
     public int x, y, radius = 20;
@@ -332,6 +376,117 @@ class VNode {
         int dx = x - mx;
         int dy = y - my;
         return dx * dx + dy * dy <= radius * radius;
+    }
+}
+
+/**
+ * Panel to execute a traversal (e.g., BFS) and visualize the visitation order
+ * using the graph's track list (exportTrack). Time is represented as the step
+ * index.
+ */
+class TraversalPanel extends JPanel {
+    private final AbstractGraph graph;
+    private final JComboBox<Integer> startNode;
+    private final JButton runBfsBtn;
+    private final JSlider timeSlider;
+    private final JTable table;
+    private final DefaultTableModel model;
+    private final GraphPanel graphPanel;
+    private java.util.List<Integer> currentTrack = java.util.Collections.emptyList();
+
+    public TraversalPanel(AbstractGraph graph) {
+        super(new BorderLayout());
+        this.graph = graph;
+
+        int n = 0;
+        int[][] m = graph.exportMatrix();
+        if (m != null)
+            n = m.length;
+
+        // Controls
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        controls.add(new JLabel("Start:"));
+        startNode = new JComboBox<>();
+        for (int i = 0; i < n; i++)
+            startNode.addItem(i);
+        controls.add(startNode);
+
+        runBfsBtn = new JButton("Run BFS");
+        runBfsBtn.addActionListener(this::onRunBfs);
+        controls.add(runBfsBtn);
+
+        controls.add(new JLabel(" Time:"));
+        timeSlider = new JSlider(0, 0, 0);
+        timeSlider.setPreferredSize(new Dimension(200, 40));
+        timeSlider.addChangeListener(e -> onTimeChanged());
+        controls.add(timeSlider);
+
+        add(controls, BorderLayout.NORTH);
+
+        // Table
+        model = new DefaultTableModel(new Object[] { "Time (step)", "Node" }, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        table = new JTable(model);
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        // Graph panel on top; reuse current engine by leaving null here, Graphit can
+        // set it
+        graphPanel = new GraphPanel(graph);
+        split.setTopComponent(graphPanel);
+        split.setBottomComponent(new JScrollPane(table));
+        split.setResizeWeight(0.7);
+        add(split, BorderLayout.CENTER);
+
+        // Empty state
+        refreshTable(java.util.Collections.emptyList());
+    }
+
+    private void onRunBfs(ActionEvent e) {
+        Integer start = (Integer) startNode.getSelectedItem();
+        if (start == null)
+            return;
+        graph.clearTrack();
+        try {
+            graph.bfs(start.intValue());
+        } catch (UnsupportedOperationException ex) {
+            JOptionPane.showMessageDialog(this, "bfs(start) not implemented for this graph.", "Not Implemented",
+                    JOptionPane.WARNING_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error running BFS: " + ex.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+        currentTrack = graph.exportTrack();
+        refreshTable(currentTrack);
+        updateSliderAndGraph();
+    }
+
+    private void refreshTable(List<Integer> track) {
+        model.setRowCount(0);
+        if (track == null)
+            return;
+        for (int i = 0; i < track.size(); i++) {
+            model.addRow(new Object[] { i, track.get(i) });
+        }
+    }
+
+    private void updateSliderAndGraph() {
+        int max = Math.max(0, (currentTrack == null) ? 0 : (currentTrack.size() - 1));
+        timeSlider.setMaximum(max);
+        int cur = Math.min(timeSlider.getValue(), max);
+        graphPanel.setTraversalState(currentTrack, cur);
+    }
+
+    private void onTimeChanged() {
+        updateSliderAndGraph();
+    }
+
+    // Allow Graphit to inject the current layout engine used in the main Graph
+    // panel
+    public void setLayoutEngine(LayoutEngine engine) {
+        graphPanel.setLayoutEngine(engine, true);
     }
 }
 

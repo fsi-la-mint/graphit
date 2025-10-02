@@ -15,6 +15,26 @@ public class AdjGraph extends AbstractGraph {
         }
     }
 
+    @Override
+    public void bfs(int start) {
+        // Implement BFS algorithm
+        boolean[] visited = new boolean[matrix.length];
+        java.util.Queue<Integer> queue = new java.util.LinkedList<>();
+        queue.add(start);
+        visited[start] = true;
+        track(start);
+        while (!queue.isEmpty()) {
+            int node = queue.poll();
+            for (int i = 0; i < matrix.length; i++) {
+                if (matrix[node][i] != 0 && !visited[i]) {
+                    queue.add(i);
+                    visited[i] = true;
+                    track(i);
+                }
+            }
+        }
+    }
+
     public int[][] getMatrix() {
         return matrix;
     }

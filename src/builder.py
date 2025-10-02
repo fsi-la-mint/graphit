@@ -69,7 +69,8 @@ def combine_java_classes(folder, public_class_file, output_folders):
     # Build final content
     combined_content = ""
     if imports:
-        combined_content += "\n".join(sorted(imports)) + "\n\n"
+        combined_content += "\n".join(
+            sorted(filter(lambda x: "graphit" not in x, imports))) + "\n\n"
     combined_content += "\n\n".join(class_bodies)
 
     # Write to all output folders

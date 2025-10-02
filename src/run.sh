@@ -21,4 +21,5 @@ javac -encoding UTF-8 -d "$DEST_DIR" *.java
 
 # 3) Switch to destination and run
 cd "$DEST_DIR"
+echo "Running example..."
 java "$MAIN"

@@ -43,6 +43,15 @@ public class Graphit extends JFrame {
         tabbedPane.setSelectedComponent(graphPanel);
     }
 
+    public void showTraversal(AbstractGraph graph) {
+        TraversalPanel traversalPanel = new TraversalPanel(graph);
+        if (currentEngine != null) {
+            traversalPanel.setLayoutEngine(currentEngine);
+        }
+        tabbedPane.addTab("Traversal", traversalPanel);
+        tabbedPane.setSelectedComponent(traversalPanel);
+    }
+
     // API: select engines
     public void setSpring() {
         this.currentEngine = new SpringLayoutEngine();

@@ -15,6 +15,9 @@ public class GraphPanel extends JPanel {
     private VNode dragged = null;
     private int offsetX, offsetY;
     private LayoutEngine layoutEngine;
+    // Traversal visualization state
+    private final java.util.Set<Integer> visited = new java.util.HashSet<>();
+    private Integer currentNodeIndex = null;
     // private java.util.List<int[]> edges = new ArrayList<>();
 
     public GraphPanel(AbstractGraph graph) {
@@ -108,6 +111,27 @@ public class GraphPanel extends JPanel {
         }
     }
 
+    // Traversal controls
+    public void setTraversalState(java.util.List<Integer> track, int timeIndex) {
+        visited.clear();
+        currentNodeIndex = null;
+        if (track != null) {
+            for (int i = 0; i < track.size(); i++) {
+                Integer idx = track.get(i);
+                if (idx == null) continue;
+                if (i < timeIndex) visited.add(idx);
+                else if (i == timeIndex) currentNodeIndex = idx;
+            }
+        }
+        repaint();
+    }
+
+    public void clearTraversalState() {
+        visited.clear();
+        currentNodeIndex = null;
+        repaint();
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -131,9 +155,16 @@ public class GraphPanel extends JPanel {
                 }
             }
 
-            // Draw nodes
-            for (VNode node : nodes) {
-                g2.setColor(Color.BLUE);
+            // Draw nodes with traversal coloring
+            for (int idx = 0; idx < nodes.size(); idx++) {
+                VNode node = nodes.get(idx);
+                Color fill = Color.BLUE;
+                if (currentNodeIndex != null && idx == currentNodeIndex.intValue()) {
+                    fill = new Color(0x80, 0x00, 0x80); // purple for current
+                } else if (visited.contains(idx)) {
+                    fill = new Color(0x00, 0x64, 0x00); // dark green for visited
+                }
+                g2.setColor(fill);
                 g2.fillOval(node.x - node.radius, node.y - node.radius, node.radius * 2, node.radius * 2);
                 g2.setColor(Color.WHITE);
                 g2.drawString(node.name, node.x - 5, node.y + 5);
@@ -145,6 +176,7 @@ public class GraphPanel extends JPanel {
     }
 
 }
+
 
 class VNode {
     public int x, y, radius = 20;
