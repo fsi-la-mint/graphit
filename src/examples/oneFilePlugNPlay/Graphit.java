@@ -41,9 +41,18 @@ public class Graphit extends JFrame {
 
 abstract class AbstractGraph {
 
-    public final int[][] exportMatrix() {
+    public abstract int[][] exportMatrix();
 
-        return new int[0][0];
+    // public final int[][] exportMatrix() {
+    // return new int[0][0];
+    // }
+
+    public void bfs(int start) {
+        bfs(start, -1);
+    }
+
+    public void bfs(int start, int end) {
+
     }
 }
 

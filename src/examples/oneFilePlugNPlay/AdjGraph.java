@@ -18,4 +18,9 @@ public class AdjGraph extends AbstractGraph {
     public int[][] getMatrix() {
         return matrix;
     }
+
+    @Override
+    public int[][] exportMatrix() {
+        return matrix;
+    }
 }
