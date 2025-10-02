@@ -3,10 +3,15 @@ package graphit.swingui;
 import javax.swing.*;
 
 import graphit.interfaces.AbstractGraph;
+import graphit.interfaces.LayoutEngine;
+import graphit.swingui.layout.CircularLayoutEngine;
+import graphit.swingui.layout.SpringLayoutEngine;
 
 public class Graphit extends JFrame {
 
     private JTabbedPane tabbedPane;
+    private LayoutEngine currentEngine = null;
+    private GraphPanel currentGraphPanel = null;
 
     public Graphit() {
         super("Graphit | Learning Graphs");
@@ -21,6 +26,7 @@ public class Graphit extends JFrame {
         home.add(new JLabel("Welcome to Graphit!"));
         tabbedPane.addTab("Home", home);
 
+        setSpring(); // Default layout engine
         setVisible(true);
     }
 
@@ -31,8 +37,22 @@ public class Graphit extends JFrame {
     }
 
     public void showGraph(AbstractGraph graph) {
-        GraphPanel matrixPanel = new GraphPanel(graph);
-        tabbedPane.addTab("Adjazenzmatrix", matrixPanel);
-        tabbedPane.setSelectedComponent(matrixPanel);
+        GraphPanel graphPanel = new GraphPanel(graph, currentEngine);
+        this.currentGraphPanel = graphPanel;
+        tabbedPane.addTab("Graph", graphPanel);
+        tabbedPane.setSelectedComponent(graphPanel);
+    }
+
+    // API: select engines
+    public void setSpring() {
+        this.currentEngine = new SpringLayoutEngine();
+        if (currentGraphPanel != null)
+            currentGraphPanel.setLayoutEngine(currentEngine, true);
+    }
+
+    public void setMethod2() {
+        this.currentEngine = new CircularLayoutEngine();
+        if (currentGraphPanel != null)
+            currentGraphPanel.setLayoutEngine(currentEngine, true);
     }
 }

@@ -30,7 +30,6 @@ public class AdjazenzmatrixPanel extends JPanel {
                 data[i][j] = Integer.toString(matrix[i][j]);
             }
         }
-        System.out.println("hello?");
 
         table = new JTable(data, columnNames);
         table.getModel().addTableModelListener(new javax.swing.event.TableModelListener() {
@@ -45,7 +44,6 @@ public class AdjazenzmatrixPanel extends JPanel {
         add(new JScrollPane(table), BorderLayout.CENTER);
         revalidate();
         repaint();
-        System.out.println("repaint should be performed");
     }
 
     public void render() {

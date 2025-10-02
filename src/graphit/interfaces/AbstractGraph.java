@@ -5,10 +5,6 @@ public abstract class AbstractGraph {
 
     public abstract int[][] exportMatrix();
 
-    // public final int[][] exportMatrix() {
-    // return new int[0][0];
-    // }
-
     public void bfs(int start) {
         bfs(start, -1);
     }
