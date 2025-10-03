@@ -6,6 +6,7 @@ import graphit.interfaces.AbstractGraph;
 import graphit.interfaces.LayoutEngine;
 import graphit.swingui.layout.CircularLayoutEngine;
 import graphit.swingui.layout.SpringLayoutEngine;
+import graphit.swingui.layout.MdsLayoutEngine;
 
 public class Graphit extends JFrame {
 
@@ -26,7 +27,8 @@ public class Graphit extends JFrame {
         home.add(new JLabel("Welcome to Graphit!"));
         tabbedPane.addTab("Home", home);
 
-        setSpring(); // Default layout engine
+        // setSpring(); // Default layout engine
+        setMDS(); // Default layout engine
         setVisible(true);
     }
 
@@ -61,6 +63,12 @@ public class Graphit extends JFrame {
 
     public void setMethod2() {
         this.currentEngine = new CircularLayoutEngine();
+        if (currentGraphPanel != null)
+            currentGraphPanel.setLayoutEngine(currentEngine, true);
+    }
+
+    public void setMDS() {
+        this.currentEngine = new MdsLayoutEngine();
         if (currentGraphPanel != null)
             currentGraphPanel.setLayoutEngine(currentEngine, true);
     }

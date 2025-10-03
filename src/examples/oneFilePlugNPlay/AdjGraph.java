@@ -35,6 +35,26 @@ public class AdjGraph extends AbstractGraph {
         }
     }
 
+    @Override
+    public void dfs(int start) {
+        // Implement DFS algorithm
+        boolean[] visited = new boolean[matrix.length];
+        java.util.Stack<Integer> stack = new java.util.Stack<>();
+        stack.push(start);
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            if (!visited[node]) {
+                visited[node] = true;
+                track(node);
+                for (int i = matrix.length - 1; i >= 0; i--) {
+                    if (matrix[node][i] != 0 && !visited[i]) {
+                        stack.push(i);
+                    }
+                }
+            }
+        }
+    }
+
     public int[][] getMatrix() {
         return matrix;
     }

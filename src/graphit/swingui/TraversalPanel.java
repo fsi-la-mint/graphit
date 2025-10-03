@@ -7,6 +7,8 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 
 import graphit.interfaces.*;
+import graphit.swingui.traversal.DefaultBfsRunner;
+import graphit.swingui.traversal.DefaultDfsRunner;
 
 /**
  * Panel to execute a traversal (e.g., BFS) and visualize the visitation order
@@ -16,6 +18,7 @@ import graphit.interfaces.*;
 public class TraversalPanel extends JPanel {
     private final AbstractGraph graph;
     private final JComboBox<Integer> startNode;
+    private final JComboBox<TraversalRunner> algoSelect;
     private final JButton runBfsBtn;
     private final JSlider timeSlider;
     private final JTable table;
@@ -33,14 +36,28 @@ public class TraversalPanel extends JPanel {
             n = m.length;
 
         // Controls
-        JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        controls.add(new JLabel("Start:"));
+    JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    controls.add(new JLabel("Algo:"));
+    algoSelect = new JComboBox<>();
+        // default strategies
+        algoSelect.addItem(new DefaultBfsRunner());
+        algoSelect.addItem(new DefaultDfsRunner());
+        // custom renderer to show getName()
+        algoSelect.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof TraversalRunner) setText(((TraversalRunner) value).getName());
+                return this;
+            }
+        });
+    controls.add(algoSelect);
         startNode = new JComboBox<>();
         for (int i = 0; i < n; i++)
             startNode.addItem(i);
         controls.add(startNode);
 
-        runBfsBtn = new JButton("Run BFS");
+        runBfsBtn = new JButton("Run");
         runBfsBtn.addActionListener(this::onRunBfs);
         controls.add(runBfsBtn);
 
@@ -71,20 +88,35 @@ public class TraversalPanel extends JPanel {
 
         // Empty state
         refreshTable(java.util.Collections.emptyList());
+
+        // Try an immediate run (first algorithm, start node 0) to give instant feedback
+        SwingUtilities.invokeLater(() -> {
+            try {
+                if (algoSelect.getItemCount() > 0 && startNode.getItemCount() > 0) {
+                    algoSelect.setSelectedIndex(0);
+                    startNode.setSelectedIndex(0);
+                    onRunBfs(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "auto-run"));
+                }
+            } catch (UnsupportedOperationException ex) {
+                showNotImplementedMessage(ex.getMessage());
+            } catch (Exception ex) {
+                // If traversal method throws, show helpful message
+                showNotImplementedMessage(ex.getMessage());
+            }
+        });
     }
 
     private void onRunBfs(ActionEvent e) {
         Integer start = (Integer) startNode.getSelectedItem();
         if (start == null)
             return;
-        graph.clearTrack();
+        TraversalRunner runner = (TraversalRunner) algoSelect.getSelectedItem();
         try {
-            graph.bfs(start.intValue());
-        } catch (UnsupportedOperationException ex) {
-            JOptionPane.showMessageDialog(this, "bfs(start) not implemented for this graph.", "Not Implemented",
-                    JOptionPane.WARNING_MESSAGE);
+            if (runner != null) {
+                runner.run(graph, start.intValue());
+            }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error running BFS: " + ex.getMessage(), "Error",
+            JOptionPane.showMessageDialog(this, "Error running traversal: " + ex.getMessage(), "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
         currentTrack = graph.exportTrack();
@@ -116,5 +148,18 @@ public class TraversalPanel extends JPanel {
     // panel
     public void setLayoutEngine(LayoutEngine engine) {
         graphPanel.setLayoutEngine(engine, true);
+    }
+
+    private void showNotImplementedMessage(String details) {
+        removeAll();
+        String msg = "Traversal not implemented. Please implement bfs(int) or dfs(int) in your graph.";
+        if (details != null && !details.isBlank()) {
+            msg += "\nDetails: " + details;
+        }
+        JLabel label = new JLabel("<html>" + msg.replace("\n", "<br/>") + "</html>");
+        label.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        add(label, BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
 }

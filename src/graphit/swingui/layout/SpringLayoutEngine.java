@@ -19,7 +19,7 @@ public class SpringLayoutEngine implements LayoutEngine {
     private final double areaPadding;
 
     public SpringLayoutEngine() {
-        this(300, 40); // reasonable defaults
+        this(500, 40); // reasonable defaults
     }
 
     public SpringLayoutEngine(int iterations, double areaPadding) {

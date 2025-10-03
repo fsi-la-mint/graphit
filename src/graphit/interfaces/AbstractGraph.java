@@ -6,15 +6,15 @@ public abstract class AbstractGraph {
     public abstract int[][] exportMatrix();
 
     public void bfs(int start) {
-        bfs(start, -1);
+        throw new UnsupportedOperationException("BFS not implemented");
+    }
+
+    public void dfs(int start) {
+        throw new UnsupportedOperationException("DFS not implemented");
     }
 
     public void track(int current) {
         trackList.add(current);
-    }
-
-    public void bfs(int start, int end) {
-
     }
 
     public final java.util.List<Integer> exportTrack() {
