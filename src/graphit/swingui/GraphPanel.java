@@ -144,8 +144,6 @@ public class GraphPanel extends JPanel {
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            int R = 12; // visual node radius; adjust to your node size
-
             int[][] matrix = graph.exportMatrix();
             if (matrix == null || matrix.length != nodes.size()) {
                 return;

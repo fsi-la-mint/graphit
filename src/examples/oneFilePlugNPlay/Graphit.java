@@ -82,10 +82,6 @@ public class Graphit extends JFrame {
     }
 }
 
-interface ITest {
-
-}
-
 /**
  * Interface for graph layout engines that compute node positions.
  * Implementations should return one Point per node (index-aligned to the
@@ -491,22 +487,24 @@ class TraversalPanel extends JPanel {
             n = m.length;
 
         // Controls
-    JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
-    controls.add(new JLabel("Algo:"));
-    algoSelect = new JComboBox<>();
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        controls.add(new JLabel("Algo:"));
+        algoSelect = new JComboBox<>();
         // default strategies
         algoSelect.addItem(new DefaultBfsRunner());
         algoSelect.addItem(new DefaultDfsRunner());
         // custom renderer to show getName()
         algoSelect.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                    boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof TraversalRunner) setText(((TraversalRunner) value).getName());
+                if (value instanceof TraversalRunner)
+                    setText(((TraversalRunner) value).getName());
                 return this;
             }
         });
-    controls.add(algoSelect);
+        controls.add(algoSelect);
         startNode = new JComboBox<>();
         for (int i = 0; i < n; i++)
             startNode.addItem(i);
