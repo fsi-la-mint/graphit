@@ -22,14 +22,21 @@ public class MdsLayoutEngine implements LayoutEngine {
 
     private final double padding;
     private final int eigenIterations;
+    private final double minNodeDistance;
+    private final int separationIterations = 80; // number of relaxation iterations
 
     public MdsLayoutEngine() {
-        this(40.0, 200);
+        this(40.0, 200, 75);
     }
 
     public MdsLayoutEngine(double padding, int eigenIterations) {
+        this(padding, eigenIterations, 75);
+    }
+
+    public MdsLayoutEngine(double padding, int eigenIterations, double minNodeDistance) {
         this.padding = Math.max(0, padding);
         this.eigenIterations = Math.max(20, eigenIterations);
+        this.minNodeDistance = Math.max(0, minNodeDistance);
     }
 
     @Override
@@ -115,14 +122,82 @@ public class MdsLayoutEngine implements LayoutEngine {
         double targetMinX = pad, targetMaxX = w - pad;
         double targetMinY = pad, targetMaxY = h - pad;
 
+        // Map to pixel coordinates (double precision), then apply separation to enforce
+        // minimum distance
+        double[] pxD = new double[n];
+        double[] pyD = new double[n];
         for (int i = 0; i < n; i++) {
             double nx = (X[i] - minX) / (maxX - minX);
             double ny = (Y[i] - minY) / (maxY - minY);
-            int px = (int) Math.round(targetMinX + nx * (targetMaxX - targetMinX));
-            int py = (int) Math.round(targetMinY + ny * (targetMaxY - targetMinY));
+            pxD[i] = targetMinX + nx * (targetMaxX - targetMinX);
+            pyD[i] = targetMinY + ny * (targetMaxY - targetMinY);
+        }
+
+        if (minNodeDistance > 0 && n > 1) {
+            separateNodes(pxD, pyD, minNodeDistance, separationIterations, targetMinX, targetMaxX, targetMinY,
+                    targetMaxY);
+        }
+
+        for (int i = 0; i < n; i++) {
+            int px = (int) Math.round(pxD[i]);
+            int py = (int) Math.round(pyD[i]);
             out.add(new Point(px, py));
         }
         return out;
+    }
+
+    /**
+     * Simple iterative separation: for pairs closer than minDist, push them apart
+     * equally.
+     * Clamps positions to the target bounds after each iteration.
+     */
+    private static void separateNodes(double[] x, double[] y, double minDist, int iterations,
+            double minX, double maxX, double minY, double maxY) {
+        int n = x.length;
+        double minDist2 = minDist * minDist;
+        java.util.Random rnd = new java.util.Random(12345);
+        for (int it = 0; it < iterations; it++) {
+            boolean any = false;
+            for (int i = 0; i < n; i++) {
+                for (int j = i + 1; j < n; j++) {
+                    double dx = x[j] - x[i];
+                    double dy = y[j] - y[i];
+                    double dist2 = dx * dx + dy * dy;
+                    if (dist2 == 0) {
+                        // jitter a tiny bit to avoid divide-by-zero
+                        dx = (rnd.nextDouble() - 0.5) * 1e-3;
+                        dy = (rnd.nextDouble() - 0.5) * 1e-3;
+                        dist2 = dx * dx + dy * dy;
+                    }
+                    if (dist2 < minDist2) {
+                        any = true;
+                        double dist = Math.sqrt(dist2);
+                        double overlap = (minDist - dist);
+                        double ux = dx / dist;
+                        double uy = dy / dist;
+                        // move each point half the overlap in opposite directions
+                        double shift = overlap * 0.5;
+                        x[i] -= ux * shift;
+                        y[i] -= uy * shift;
+                        x[j] += ux * shift;
+                        y[j] += uy * shift;
+                    }
+                }
+            }
+            // clamp to box
+            for (int k = 0; k < n; k++) {
+                if (x[k] < minX)
+                    x[k] = minX;
+                if (x[k] > maxX)
+                    x[k] = maxX;
+                if (y[k] < minY)
+                    y[k] = minY;
+                if (y[k] > maxY)
+                    y[k] = maxY;
+            }
+            if (!any)
+                break; // early exit if satisfied
+        }
     }
 
     private static double[][] allPairsWeightedShortestPaths(double[][] m) {
