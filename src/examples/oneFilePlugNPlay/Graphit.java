@@ -35,6 +35,7 @@ public class Graphit extends JFrame {
         tabbedPane.addTab("Home", home);
 
         // setSpring(); // Default layout engine
+        // setCircular();
         setMDS(); // Default layout engine
         setVisible(true);
     }
@@ -68,7 +69,7 @@ public class Graphit extends JFrame {
             currentGraphPanel.setLayoutEngine(currentEngine, true);
     }
 
-    public void setMethod2() {
+    public void setCircular() {
         this.currentEngine = new CircularLayoutEngine();
         if (currentGraphPanel != null)
             currentGraphPanel.setLayoutEngine(currentEngine, true);
@@ -78,47 +79,6 @@ public class Graphit extends JFrame {
         this.currentEngine = new MdsLayoutEngine();
         if (currentGraphPanel != null)
             currentGraphPanel.setLayoutEngine(currentEngine, true);
-    }
-}
-
-abstract class AbstractGraph {
-    private java.util.List<Integer> trackList = new java.util.ArrayList<>();
-
-    public abstract int[][] exportMatrix();
-
-    public void bfs(int start) {
-        throw new UnsupportedOperationException("BFS not implemented");
-    }
-
-    public void dfs(int start) {
-        throw new UnsupportedOperationException("DFS not implemented");
-    }
-
-    public void track(int current) {
-        trackList.add(current);
-    }
-
-    public final java.util.List<Integer> exportTrack() {
-        return trackList;
-    }
-
-    public void clearTrack() {
-        trackList.clear();
-    }
-
-    public void setTrack(java.util.List<Integer> tracked) {
-        trackList = java.util.List.copyOf(tracked);
-    }
-
-    public void setTrack(int[] tracked) {
-        if (tracked == null) {
-            trackList = new java.util.ArrayList<Integer>();
-            return;
-        }
-        trackList = new java.util.ArrayList<Integer>(tracked.length);
-        for (int i = 0; i < tracked.length; i++) {
-            trackList.add(Integer.valueOf(tracked[i]));
-        }
     }
 }
 
@@ -164,6 +124,64 @@ interface TraversalRunner {
      * before populating the track.
      */
     void run(AbstractGraph graph, int start) throws Exception;
+}
+
+abstract class AbstractGraph {
+    private java.util.List<Integer> trackList = new java.util.ArrayList<>();
+
+    public abstract int[][] exportMatrix();
+
+    public void bfs(int start) {
+        throw new UnsupportedOperationException("BFS not implemented");
+    }
+
+    public void dfs(int start) {
+        throw new UnsupportedOperationException("DFS not implemented");
+    }
+
+    public void track(int current) {
+        trackList.add(current);
+    }
+
+    public final java.util.List<Integer> exportTrack() {
+        return trackList;
+    }
+
+    public void clearTrack() {
+        trackList.clear();
+    }
+
+    public void setTrack(java.util.List<Integer> tracked) {
+        trackList = java.util.List.copyOf(tracked);
+    }
+
+    public void setTrack(int[] tracked) {
+        if (tracked == null) {
+            trackList = new java.util.ArrayList<Integer>();
+            return;
+        }
+        trackList = new java.util.ArrayList<Integer>(tracked.length);
+        for (int i = 0; i < tracked.length; i++) {
+            trackList.add(Integer.valueOf(tracked[i]));
+        }
+    }
+
+    public double[][] deepClone() {
+        int[][] m = this.exportMatrix();
+        double[][] undirected = new double[m.length][m.length];
+
+        for (int i = 0; i < m.length; i++) {
+            for (int j = i + 1; j < m.length; j++) {
+                if (m[i][j] == 0) {
+                    m[i][j] = m[j][i];
+                } else {
+                    m[j][i] = m[i][j];
+                }
+            }
+        }
+
+        return undirected;
+    }
 }
 
 class AdjazenzmatrixPanel extends JPanel {
@@ -289,11 +307,13 @@ class GraphPanel extends JPanel {
 
     public void setLayoutEngine(LayoutEngine engine, boolean relayout) {
         this.layoutEngine = engine;
-        if (relayout) applyLayout();
+        if (relayout)
+            applyLayout();
     }
 
     public void applyLayout() {
-        if (layoutEngine == null || graph == null) return;
+        if (layoutEngine == null || graph == null)
+            return;
         Dimension area = getSize();
         if (area == null || area.width < 10 || area.height < 10) {
             Container p = getParent();
@@ -326,9 +346,12 @@ class GraphPanel extends JPanel {
         if (track != null) {
             for (int i = 0; i < track.size(); i++) {
                 Integer idx = track.get(i);
-                if (idx == null) continue;
-                if (i < timeIndex) visited.add(idx);
-                else if (i == timeIndex) currentNodeIndex = idx;
+                if (idx == null)
+                    continue;
+                if (i < timeIndex)
+                    visited.add(idx);
+                else if (i == timeIndex)
+                    currentNodeIndex = idx;
             }
         }
         repaint();
@@ -347,19 +370,42 @@ class GraphPanel extends JPanel {
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Draw edges from adjacency matrix
+            int R = 12; // visual node radius; adjust to your node size
+
             int[][] matrix = graph.exportMatrix();
-            if (matrix != null && matrix.length == nodes.size()) {
-                g2.setColor(new Color(0x66, 0x66, 0x66));
-                g2.setStroke(new BasicStroke(1.2f));
-                for (int i = 0; i < matrix.length; i++) {
-                    for (int j = 0; j < matrix[i].length; j++) {
-                        if (matrix[i][j] != 0) {
-                            VNode a = nodes.get(i);
-                            VNode b = nodes.get(j);
-                            g2.drawLine(a.x, a.y, b.x, b.y);
-                        }
-                    }
+            if (matrix == null || matrix.length != nodes.size()) {
+                return;
+            }
+            g2.setColor(new Color(0x66, 0x66, 0x66));
+            g2.setStroke(new BasicStroke(1.2f));
+
+            for (int i = 0; i < matrix.length; i++) {
+                for (int j = 0; j < matrix[i].length; j++) {
+                    if (matrix[i][j] == 0 || i == j)
+                        continue;
+
+                    VNode a = nodes.get(i);
+                    VNode b = nodes.get(j);
+
+                    double dx = b.x - a.x, dy = b.y - a.y;
+                    double dist = Math.hypot(dx, dy);
+                    if (dist < 1e-6)
+                        continue;
+
+                    double ux = dx / dist, uy = dy / dist;
+
+                    // start at source outline, end at target outline
+                    int sx = (int) Math.round(a.x + ux * a.radius);
+                    int sy = (int) Math.round(a.y + uy * a.radius);
+                    int tx = (int) Math.round(b.x - ux * b.radius);
+                    int ty = (int) Math.round(b.y - uy * b.radius);
+
+                    // also pull the arrowhead back a bit so its tips don't intrude
+                    int arrowPad = 2; // tweak as needed
+                    tx = (int) Math.round(tx - ux * arrowPad);
+                    ty = (int) Math.round(ty - uy * arrowPad);
+
+                    drawArrow(g2, sx, sy, tx, ty);
                 }
             }
 
@@ -383,8 +429,24 @@ class GraphPanel extends JPanel {
 
     }
 
-}
+    private static void drawArrow(Graphics2D g2, int x1, int y1, int x2, int y2) {
+        g2.drawLine(x1, y1, x2, y2);
 
+        double phi = Math.toRadians(25);
+        int barb = 10;
+
+        double dx = x2 - x1, dy = y2 - y1;
+        double theta = Math.atan2(dy, dx);
+
+        for (int s : new int[] { 1, -1 }) {
+            double rho = theta + Math.PI + s * phi;
+            int ax = (int) Math.round(x2 + barb * Math.cos(rho));
+            int ay = (int) Math.round(y2 + barb * Math.sin(rho));
+            g2.drawLine(x2, y2, ax, ay);
+        }
+    }
+
+}
 
 class VNode {
     public int x, y, radius = 20;
@@ -558,6 +620,331 @@ class TraversalPanel extends JPanel {
 }
 
 /**
+ * Places nodes evenly spaced on a circle.
+ */
+class CircularLayoutEngine implements LayoutEngine {
+    @Override
+    public List<Point> layout(AbstractGraph graph, Dimension area) {
+        double[][] m = graph.deepClone();
+        int n = (m == null) ? 0 : m.length;
+        List<Point> positions = new ArrayList<>(n);
+        if (n == 0)
+            return positions;
+
+        int width = Math.max(1, area.width);
+        int height = Math.max(1, area.height);
+        int cx = width / 2;
+        int cy = height / 2;
+        int radius = Math.max(1, Math.min(width, height) / 2 - 40);
+
+        for (int i = 0; i < n; i++) {
+            double angle = 2 * Math.PI * i / n;
+            int x = cx + (int) Math.round(radius * Math.cos(angle));
+            int y = cy + (int) Math.round(radius * Math.sin(angle));
+            positions.add(new Point(x, y));
+        }
+        return positions;
+    }
+}
+
+/**
+ * Multidimensional Scaling (MDS) layout using classical MDS on graph geodesic
+ * distances.
+ * - Distances use weighted shortest-paths based on the adjacency matrix entries
+ * (>0 as edge length).
+ * - Embeds into 2D by taking the top-2 eigenpairs of the double-centered
+ * matrix.
+ * Only uses Java standard library.
+ */
+class MdsLayoutEngine implements LayoutEngine {
+
+    private final double padding;
+    private final int eigenIterations;
+
+    public MdsLayoutEngine() {
+        this(40.0, 200);
+    }
+
+    public MdsLayoutEngine(double padding, int eigenIterations) {
+        this.padding = Math.max(0, padding);
+        this.eigenIterations = Math.max(20, eigenIterations);
+    }
+
+    @Override
+    public List<Point> layout(AbstractGraph graph, Dimension area) {
+        int[][] matrix = graph.exportMatrix();
+        double[][] m = null;
+        m = new double[matrix.length][];
+        for (int i = 0; i < m.length; i++) {
+            int[] row = matrix[i];
+            if (row != null) {
+                m[i] = new double[row.length];
+                for (int j = 0; j < row.length; j++) {
+                    m[i][j] = (double) row[j];
+                }
+            } else {
+                m[i] = null;
+            }
+        }
+
+        // double[][] m = graph.deepClone();
+
+        int n = (m == null) ? 0 : m.length;
+        List<Point> out = new ArrayList<>(n);
+        if (n == 0)
+            return out;
+
+        // 1) All-pairs weighted shortest path distances
+        double[][] D = allPairsWeightedShortestPaths(m);
+        // Symmetrize distances to make them suitable for MDS if graph is directed
+        symmetrize(D);
+
+        // 2) Classical MDS: B = -1/2 * J * (D^2) * J
+        double[][] B = buildDoubleCenteredMatrix(D);
+
+        // 3) Top-2 eigenpairs of B via power iteration with deflation
+        EigenPair e1 = powerIteration(B, eigenIterations);
+        double[][] Bdef = deflate(B, e1);
+        EigenPair e2 = powerIteration(Bdef, eigenIterations);
+
+        // 4) Coordinates: x_i = sqrt(lambda) * v_i
+        double[] X = new double[n];
+        double[] Y = new double[n];
+        if (e1.lambda > 1e-9 && e1.v != null) {
+            double s = Math.sqrt(e1.lambda);
+            for (int i = 0; i < n; i++)
+                X[i] = e1.v[i] * s;
+        }
+        if (e2.lambda > 1e-9 && e2.v != null) {
+            double s = Math.sqrt(e2.lambda);
+            for (int i = 0; i < n; i++)
+                Y[i] = e2.v[i] * s;
+        }
+
+        // 5) Normalize to area with padding
+        int w = Math.max(1, area.width);
+        int h = Math.max(1, area.height);
+        double minX = Double.POSITIVE_INFINITY, maxX = Double.NEGATIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < n; i++) {
+            if (X[i] < minX)
+                minX = X[i];
+            if (X[i] > maxX)
+                maxX = X[i];
+            if (Y[i] < minY)
+                minY = Y[i];
+            if (Y[i] > maxY)
+                maxY = Y[i];
+        }
+        if (!(maxX > minX)) { // degenerate
+            for (int i = 0; i < n; i++)
+                X[i] = i;
+            minX = 0;
+            maxX = Math.max(1, n - 1);
+        }
+        if (!(maxY > minY)) {
+            for (int i = 0; i < n; i++)
+                Y[i] = 0;
+            minY = 0;
+            maxY = 1;
+        }
+
+        double pad = Math.min(Math.min(w, h) * 0.2, padding);
+        double targetMinX = pad, targetMaxX = w - pad;
+        double targetMinY = pad, targetMaxY = h - pad;
+
+        for (int i = 0; i < n; i++) {
+            double nx = (X[i] - minX) / (maxX - minX);
+            double ny = (Y[i] - minY) / (maxY - minY);
+            int px = (int) Math.round(targetMinX + nx * (targetMaxX - targetMinX));
+            int py = (int) Math.round(targetMinY + ny * (targetMaxY - targetMinY));
+            out.add(new Point(px, py));
+        }
+        return out;
+    }
+
+    private static double[][] allPairsWeightedShortestPaths(double[][] m) {
+        int n = m.length;
+        double INF = 1e12;
+        double[][] dist = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (i == j) {
+                    dist[i][j] = 0.0;
+                } else if (m[i][j] > 0) {
+                    dist[i][j] = (double) m[i][j]; // use weight as length
+                } else {
+                    dist[i][j] = INF; // no edge
+                }
+            }
+        }
+
+        // Floyd-Warshall for weighted graphs (assuming non-negative weights)
+        for (int k = 0; k < n; k++) {
+            for (int i = 0; i < n; i++) {
+                double dik = dist[i][k];
+                if (dik == INF)
+                    continue;
+                for (int j = 0; j < n; j++) {
+                    double v = dik + dist[k][j];
+                    if (v < dist[i][j])
+                        dist[i][j] = v;
+                }
+            }
+        }
+
+        // Replace unreachable distances with a large finite value (slightly above max)
+        double max = 0;
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                if (dist[i][j] < INF && dist[i][j] > max)
+                    max = dist[i][j];
+        double far = (max <= 0) ? 1.0 : (max * 1.5 + 1.0);
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                if (dist[i][j] >= INF)
+                    dist[i][j] = far;
+        return dist;
+    }
+
+    private static void symmetrize(double[][] D) {
+        int n = D.length;
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                double a = D[i][j];
+                double b = D[j][i];
+                double s;
+                if (Double.isFinite(a) && Double.isFinite(b))
+                    s = 0.5 * (a + b);
+                else if (Double.isFinite(a))
+                    s = a;
+                else if (Double.isFinite(b))
+                    s = b;
+                else
+                    s = a; // both non-finite, keep as-is
+                D[i][j] = D[j][i] = s;
+            }
+        }
+    }
+
+    private static double[][] buildDoubleCenteredMatrix(double[][] D) {
+        int n = D.length;
+        double[][] D2 = new double[n][n];
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                D2[i][j] = D[i][j] * D[i][j];
+
+        double[] rowMean = new double[n];
+        double[] colMean = new double[n];
+        double totalMean = 0.0;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                rowMean[i] += D2[i][j];
+                colMean[j] += D2[i][j];
+                totalMean += D2[i][j];
+            }
+        }
+        for (int i = 0; i < n; i++)
+            rowMean[i] /= n;
+        for (int j = 0; j < n; j++)
+            colMean[j] /= n;
+        totalMean /= (n * n);
+
+        double[][] B = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                B[i][j] = -0.5 * (D2[i][j] - rowMean[i] - colMean[j] + totalMean);
+            }
+        }
+        return B;
+    }
+
+    private static class EigenPair {
+        double lambda;
+        double[] v;
+
+        EigenPair(double lambda, double[] v) {
+            this.lambda = lambda;
+            this.v = v;
+        }
+    }
+
+    private static EigenPair powerIteration(double[][] A, int iterations) {
+        int n = A.length;
+        double[] v = new double[n];
+        Random rnd = new Random(123);
+        for (int i = 0; i < n; i++)
+            v[i] = rnd.nextDouble();
+        normalize(v);
+
+        double lambda = 0;
+        for (int it = 0; it < iterations; it++) {
+            double[] Av = multiply(A, v);
+            double norm = norm(Av);
+            if (norm < 1e-12)
+                break;
+            for (int i = 0; i < n; i++)
+                v[i] = Av[i] / norm;
+            lambda = rayleighQuotient(A, v);
+        }
+        return new EigenPair(lambda, v);
+    }
+
+    private static double[][] deflate(double[][] A, EigenPair e) {
+        int n = A.length;
+        double[][] B = new double[n][n];
+        double lambda = e.lambda;
+        double[] v = e.v;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                B[i][j] = A[i][j] - lambda * v[i] * v[j];
+            }
+        }
+        return B;
+    }
+
+    private static double[] multiply(double[][] A, double[] x) {
+        int n = A.length;
+        double[] y = new double[n];
+        for (int i = 0; i < n; i++) {
+            double s = 0;
+            for (int j = 0; j < n; j++)
+                s += A[i][j] * x[j];
+            y[i] = s;
+        }
+        return y;
+    }
+
+    private static void normalize(double[] v) {
+        double n = norm(v);
+        if (n < 1e-12)
+            return;
+        for (int i = 0; i < v.length; i++)
+            v[i] /= n;
+    }
+
+    private static double norm(double[] v) {
+        double s = 0;
+        for (double a : v)
+            s += a * a;
+        return Math.sqrt(s);
+    }
+
+    private static double rayleighQuotient(double[][] A, double[] v) {
+        double[] Av = multiply(A, v);
+        double num = 0, den = 0;
+        for (int i = 0; i < v.length; i++) {
+            num += v[i] * Av[i];
+            den += v[i] * v[i];
+        }
+        if (den < 1e-12)
+            return 0;
+        return num / den;
+    }
+}
+
+/**
  * A simple force-directed (spring) layout engine (Fruchterman-Reingold style).
  * Not optimized, but fine for small graphs in a teaching/demo context.
  */
@@ -577,10 +964,11 @@ class SpringLayoutEngine implements LayoutEngine {
 
     @Override
     public List<Point> layout(AbstractGraph graph, Dimension area) {
-        int[][] m = graph.exportMatrix();
+        double[][] m = graph.deepClone();
         int n = (m == null) ? 0 : m.length;
         List<Point> positions = new ArrayList<>(n);
-        if (n == 0) return positions;
+        if (n == 0)
+            return positions;
 
         int width = Math.max(1, area.width);
         int height = Math.max(1, area.height);
@@ -588,12 +976,16 @@ class SpringLayoutEngine implements LayoutEngine {
         double minX = pad, minY = pad, maxX = width - pad, maxY = height - pad;
 
         // Compute average absolute edge weight for normalization
-        double sumW = 0.0; int cntW = 0;
+        double sumW = 0.0;
+        int cntW = 0;
         if (m != null) {
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
-                    int wij = m[i][j];
-                    if (wij != 0) { sumW += Math.abs((double) wij); cntW++; }
+                    double wij = m[i][j];
+                    if (wij != 0) {
+                        sumW += Math.abs((double) wij);
+                        cntW++;
+                    }
                 }
             }
         }
@@ -619,7 +1011,10 @@ class SpringLayoutEngine implements LayoutEngine {
 
         for (int iter = 0; iter < iterations; iter++) {
             // reset
-            for (int i = 0; i < n; i++) { dx[i] = 0; dy[i] = 0; }
+            for (int i = 0; i < n; i++) {
+                dx[i] = 0;
+                dy[i] = 0;
+            }
 
             // repulsive forces between all pairs
             for (int i = 0; i < n; i++) {
@@ -631,8 +1026,10 @@ class SpringLayoutEngine implements LayoutEngine {
                     double force = (k * k) / dist; // repulsive
                     double fx = force * dxij / dist;
                     double fy = force * dyij / dist;
-                    dx[i] += fx; dy[i] += fy;
-                    dx[j] -= fx; dy[j] -= fy;
+                    dx[i] += fx;
+                    dy[i] += fy;
+                    dx[j] -= fx;
+                    dy[j] -= fy;
                 }
             }
 
@@ -643,7 +1040,10 @@ class SpringLayoutEngine implements LayoutEngine {
                         // Normalize weight so typical edges are ~1.0 influence
                         double w = Math.abs((double) m[i][j]) / avgW;
                         // Clamp to keep the system stable
-                        if (w < 0.1) w = 0.1; else if (w > 10.0) w = 10.0;
+                        if (w < 0.1)
+                            w = 0.1;
+                        else if (w > 10.0)
+                            w = 10.0;
                         double dxij = x[i] - x[j];
                         double dyij = y[i] - y[j];
                         double dist = Math.sqrt(dxij * dxij + dyij * dyij) + 0.01;
@@ -651,8 +1051,10 @@ class SpringLayoutEngine implements LayoutEngine {
                         double fx = force * dxij / dist;
                         double fy = force * dyij / dist;
                         // i pulls towards j (negative of dxij sign)
-                        dx[i] -= fx; dy[i] -= fy;
-                        dx[j] += fx; dy[j] += fy;
+                        dx[i] -= fx;
+                        dy[i] -= fy;
+                        dx[j] += fx;
+                        dy[j] += fy;
                     }
                 }
             }
@@ -673,276 +1075,14 @@ class SpringLayoutEngine implements LayoutEngine {
 
             // cool
             temperature *= 0.95;
-            if (temperature < 0.1) break;
+            if (temperature < 0.1)
+                break;
         }
 
         for (int i = 0; i < n; i++) {
             positions.add(new Point((int) Math.round(x[i]), (int) Math.round(y[i])));
         }
         return positions;
-    }
-}
-
-/**
- * Places nodes evenly spaced on a circle.
- */
-class CircularLayoutEngine implements LayoutEngine {
-    @Override
-    public List<Point> layout(AbstractGraph graph, Dimension area) {
-        int[][] m = graph.exportMatrix();
-        int n = (m == null) ? 0 : m.length;
-        List<Point> positions = new ArrayList<>(n);
-        if (n == 0) return positions;
-
-        int width = Math.max(1, area.width);
-        int height = Math.max(1, area.height);
-        int cx = width / 2;
-        int cy = height / 2;
-        int radius = Math.max(1, Math.min(width, height) / 2 - 40);
-
-        for (int i = 0; i < n; i++) {
-            double angle = 2 * Math.PI * i / n;
-            int x = cx + (int) Math.round(radius * Math.cos(angle));
-            int y = cy + (int) Math.round(radius * Math.sin(angle));
-            positions.add(new Point(x, y));
-        }
-        return positions;
-    }
-}
-
-/**
- * Multidimensional Scaling (MDS) layout using classical MDS on graph geodesic distances.
- * - Distances use weighted shortest-paths based on the adjacency matrix entries (>0 as edge length).
- * - Embeds into 2D by taking the top-2 eigenpairs of the double-centered matrix.
- * Only uses Java standard library.
- */
-class MdsLayoutEngine implements LayoutEngine {
-
-    private final double padding;
-    private final int eigenIterations;
-
-    public MdsLayoutEngine() {
-        this(40.0, 200);
-    }
-
-    public MdsLayoutEngine(double padding, int eigenIterations) {
-        this.padding = Math.max(0, padding);
-        this.eigenIterations = Math.max(20, eigenIterations);
-    }
-
-    @Override
-    public List<Point> layout(AbstractGraph graph, Dimension area) {
-        int[][] m = graph.exportMatrix();
-        int n = (m == null) ? 0 : m.length;
-        List<Point> out = new ArrayList<>(n);
-        if (n == 0) return out;
-
-    // 1) All-pairs weighted shortest path distances
-    double[][] D = allPairsWeightedShortestPaths(m);
-    // Symmetrize distances to make them suitable for MDS if graph is directed
-    symmetrize(D);
-
-        // 2) Classical MDS: B = -1/2 * J * (D^2) * J
-        double[][] B = buildDoubleCenteredMatrix(D);
-
-        // 3) Top-2 eigenpairs of B via power iteration with deflation
-        EigenPair e1 = powerIteration(B, eigenIterations);
-        double[][] Bdef = deflate(B, e1);
-        EigenPair e2 = powerIteration(Bdef, eigenIterations);
-
-        // 4) Coordinates: x_i = sqrt(lambda) * v_i
-        double[] X = new double[n];
-        double[] Y = new double[n];
-        if (e1.lambda > 1e-9 && e1.v != null) {
-            double s = Math.sqrt(e1.lambda);
-            for (int i = 0; i < n; i++) X[i] = e1.v[i] * s;
-        }
-        if (e2.lambda > 1e-9 && e2.v != null) {
-            double s = Math.sqrt(e2.lambda);
-            for (int i = 0; i < n; i++) Y[i] = e2.v[i] * s;
-        }
-
-        // 5) Normalize to area with padding
-        int w = Math.max(1, area.width);
-        int h = Math.max(1, area.height);
-        double minX = Double.POSITIVE_INFINITY, maxX = Double.NEGATIVE_INFINITY;
-        double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < n; i++) {
-            if (X[i] < minX) minX = X[i];
-            if (X[i] > maxX) maxX = X[i];
-            if (Y[i] < minY) minY = Y[i];
-            if (Y[i] > maxY) maxY = Y[i];
-        }
-        if (!(maxX > minX)) { // degenerate
-            for (int i = 0; i < n; i++) X[i] = i;
-            minX = 0; maxX = Math.max(1, n - 1);
-        }
-        if (!(maxY > minY)) {
-            for (int i = 0; i < n; i++) Y[i] = 0;
-            minY = 0; maxY = 1;
-        }
-
-        double pad = Math.min(Math.min(w, h) * 0.2, padding);
-        double targetMinX = pad, targetMaxX = w - pad;
-        double targetMinY = pad, targetMaxY = h - pad;
-
-        for (int i = 0; i < n; i++) {
-            double nx = (X[i] - minX) / (maxX - minX);
-            double ny = (Y[i] - minY) / (maxY - minY);
-            int px = (int) Math.round(targetMinX + nx * (targetMaxX - targetMinX));
-            int py = (int) Math.round(targetMinY + ny * (targetMaxY - targetMinY));
-            out.add(new Point(px, py));
-        }
-        return out;
-    }
-
-    private static double[][] allPairsWeightedShortestPaths(int[][] m) {
-        int n = m.length;
-        double INF = 1e12;
-        double[][] dist = new double[n][n];
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                if (i == j) {
-                    dist[i][j] = 0.0;
-                } else if (m[i][j] > 0) {
-                    dist[i][j] = (double) m[i][j]; // use weight as length
-                } else {
-                    dist[i][j] = INF; // no edge
-                }
-            }
-        }
-        // Floyd-Warshall for weighted graphs (assuming non-negative weights)
-        for (int k = 0; k < n; k++) {
-            for (int i = 0; i < n; i++) {
-                double dik = dist[i][k];
-                if (dik == INF) continue;
-                for (int j = 0; j < n; j++) {
-                    double v = dik + dist[k][j];
-                    if (v < dist[i][j]) dist[i][j] = v;
-                }
-            }
-        }
-        // Replace unreachable distances with a large finite value (slightly above max)
-        double max = 0;
-        for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) if (dist[i][j] < INF && dist[i][j] > max) max = dist[i][j];
-        double far = (max <= 0) ? 1.0 : (max * 1.5 + 1.0);
-        for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) if (dist[i][j] >= INF) dist[i][j] = far;
-        return dist;
-    }
-
-    private static void symmetrize(double[][] D) {
-        int n = D.length;
-        for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
-                double a = D[i][j];
-                double b = D[j][i];
-                double s;
-                if (Double.isFinite(a) && Double.isFinite(b)) s = 0.5 * (a + b);
-                else if (Double.isFinite(a)) s = a;
-                else if (Double.isFinite(b)) s = b;
-                else s = a; // both non-finite, keep as-is
-                D[i][j] = D[j][i] = s;
-            }
-        }
-    }
-
-    private static double[][] buildDoubleCenteredMatrix(double[][] D) {
-        int n = D.length;
-        double[][] D2 = new double[n][n];
-        for (int i = 0; i < n; i++)
-            for (int j = 0; j < n; j++)
-                D2[i][j] = D[i][j] * D[i][j];
-
-        double[] rowMean = new double[n];
-        double[] colMean = new double[n];
-        double totalMean = 0.0;
-
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                rowMean[i] += D2[i][j];
-                colMean[j] += D2[i][j];
-                totalMean += D2[i][j];
-            }
-        }
-        for (int i = 0; i < n; i++) rowMean[i] /= n;
-        for (int j = 0; j < n; j++) colMean[j] /= n;
-        totalMean /= (n * n);
-
-        double[][] B = new double[n][n];
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                B[i][j] = -0.5 * (D2[i][j] - rowMean[i] - colMean[j] + totalMean);
-            }
-        }
-        return B;
-    }
-
-    private static class EigenPair {
-        double lambda;
-        double[] v;
-        EigenPair(double lambda, double[] v) { this.lambda = lambda; this.v = v; }
-    }
-
-    private static EigenPair powerIteration(double[][] A, int iterations) {
-        int n = A.length;
-        double[] v = new double[n];
-        Random rnd = new Random(123);
-        for (int i = 0; i < n; i++) v[i] = rnd.nextDouble();
-        normalize(v);
-
-        double lambda = 0;
-        for (int it = 0; it < iterations; it++) {
-            double[] Av = multiply(A, v);
-            double norm = norm(Av);
-            if (norm < 1e-12) break;
-            for (int i = 0; i < n; i++) v[i] = Av[i] / norm;
-            lambda = rayleighQuotient(A, v);
-        }
-        return new EigenPair(lambda, v);
-    }
-
-    private static double[][] deflate(double[][] A, EigenPair e) {
-        int n = A.length;
-        double[][] B = new double[n][n];
-        double lambda = e.lambda;
-        double[] v = e.v;
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                B[i][j] = A[i][j] - lambda * v[i] * v[j];
-            }
-        }
-        return B;
-    }
-
-    private static double[] multiply(double[][] A, double[] x) {
-        int n = A.length;
-        double[] y = new double[n];
-        for (int i = 0; i < n; i++) {
-            double s = 0;
-            for (int j = 0; j < n; j++) s += A[i][j] * x[j];
-            y[i] = s;
-        }
-        return y;
-    }
-
-    private static void normalize(double[] v) {
-        double n = norm(v);
-        if (n < 1e-12) return;
-        for (int i = 0; i < v.length; i++) v[i] /= n;
-    }
-
-    private static double norm(double[] v) {
-        double s = 0;
-        for (double a : v) s += a * a;
-        return Math.sqrt(s);
-    }
-
-    private static double rayleighQuotient(double[][] A, double[] v) {
-        double[] Av = multiply(A, v);
-        double num = 0, den = 0;
-        for (int i = 0; i < v.length; i++) { num += v[i] * Av[i]; den += v[i] * v[i]; }
-        if (den < 1e-12) return 0;
-        return num / den;
     }
 }
 

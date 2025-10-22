@@ -81,11 +81,13 @@ public class GraphPanel extends JPanel {
 
     public void setLayoutEngine(LayoutEngine engine, boolean relayout) {
         this.layoutEngine = engine;
-        if (relayout) applyLayout();
+        if (relayout)
+            applyLayout();
     }
 
     public void applyLayout() {
-        if (layoutEngine == null || graph == null) return;
+        if (layoutEngine == null || graph == null)
+            return;
         Dimension area = getSize();
         if (area == null || area.width < 10 || area.height < 10) {
             Container p = getParent();
@@ -118,9 +120,12 @@ public class GraphPanel extends JPanel {
         if (track != null) {
             for (int i = 0; i < track.size(); i++) {
                 Integer idx = track.get(i);
-                if (idx == null) continue;
-                if (i < timeIndex) visited.add(idx);
-                else if (i == timeIndex) currentNodeIndex = idx;
+                if (idx == null)
+                    continue;
+                if (i < timeIndex)
+                    visited.add(idx);
+                else if (i == timeIndex)
+                    currentNodeIndex = idx;
             }
         }
         repaint();
@@ -139,19 +144,42 @@ public class GraphPanel extends JPanel {
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Draw edges from adjacency matrix
+            int R = 12; // visual node radius; adjust to your node size
+
             int[][] matrix = graph.exportMatrix();
-            if (matrix != null && matrix.length == nodes.size()) {
-                g2.setColor(new Color(0x66, 0x66, 0x66));
-                g2.setStroke(new BasicStroke(1.2f));
-                for (int i = 0; i < matrix.length; i++) {
-                    for (int j = 0; j < matrix[i].length; j++) {
-                        if (matrix[i][j] != 0) {
-                            VNode a = nodes.get(i);
-                            VNode b = nodes.get(j);
-                            g2.drawLine(a.x, a.y, b.x, b.y);
-                        }
-                    }
+            if (matrix == null || matrix.length != nodes.size()) {
+                return;
+            }
+            g2.setColor(new Color(0x66, 0x66, 0x66));
+            g2.setStroke(new BasicStroke(1.2f));
+
+            for (int i = 0; i < matrix.length; i++) {
+                for (int j = 0; j < matrix[i].length; j++) {
+                    if (matrix[i][j] == 0 || i == j)
+                        continue;
+
+                    VNode a = nodes.get(i);
+                    VNode b = nodes.get(j);
+
+                    double dx = b.x - a.x, dy = b.y - a.y;
+                    double dist = Math.hypot(dx, dy);
+                    if (dist < 1e-6)
+                        continue;
+
+                    double ux = dx / dist, uy = dy / dist;
+
+                    // start at source outline, end at target outline
+                    int sx = (int) Math.round(a.x + ux * a.radius);
+                    int sy = (int) Math.round(a.y + uy * a.radius);
+                    int tx = (int) Math.round(b.x - ux * b.radius);
+                    int ty = (int) Math.round(b.y - uy * b.radius);
+
+                    // also pull the arrowhead back a bit so its tips don't intrude
+                    int arrowPad = 2; // tweak as needed
+                    tx = (int) Math.round(tx - ux * arrowPad);
+                    ty = (int) Math.round(ty - uy * arrowPad);
+
+                    drawArrow(g2, sx, sy, tx, ty);
                 }
             }
 
@@ -175,8 +203,24 @@ public class GraphPanel extends JPanel {
 
     }
 
-}
+    private static void drawArrow(Graphics2D g2, int x1, int y1, int x2, int y2) {
+        g2.drawLine(x1, y1, x2, y2);
 
+        double phi = Math.toRadians(25);
+        int barb = 10;
+
+        double dx = x2 - x1, dy = y2 - y1;
+        double theta = Math.atan2(dy, dx);
+
+        for (int s : new int[] { 1, -1 }) {
+            double rho = theta + Math.PI + s * phi;
+            int ax = (int) Math.round(x2 + barb * Math.cos(rho));
+            int ay = (int) Math.round(y2 + barb * Math.sin(rho));
+            g2.drawLine(x2, y2, ax, ay);
+        }
+    }
+
+}
 
 class VNode {
     public int x, y, radius = 20;

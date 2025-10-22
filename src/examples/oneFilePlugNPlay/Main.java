@@ -1,36 +1,77 @@
 public class Main {
-    public static void main(String[] args) {
 
+    private static AdjGraph example1() {
         AdjGraph graph = new AdjGraph(10);
         int[][] matrix = graph.getMatrix();
 
         // connections (undirected / symmetric)
-        // matrix[0][1] = 7;  matrix[1][0] = 7;
-        matrix[0][2] = 3;  matrix[2][0] = 3;
-        matrix[0][4] = 2;  matrix[4][0] = 2;
+        // matrix[0][1] = 7; matrix[1][0] = 7;
+        matrix[0][2] = 3;
+        matrix[2][0] = 3;
+        matrix[0][4] = 2;
+        matrix[4][0] = 2;
 
-        // matrix[1][2] = 1;  matrix[2][1] = 1;
-        matrix[1][4] = 4;  matrix[4][1] = 4;
-        matrix[1][3] = 5;  matrix[3][1] = 5;
+        // matrix[1][2] = 1; matrix[2][1] = 1;
+        matrix[1][4] = 4;
+        matrix[4][1] = 4;
+        matrix[1][3] = 5;
+        matrix[3][1] = 5;
 
-        matrix[2][5] = 8;  matrix[5][2] = 8;
-        matrix[2][9] = 10; matrix[9][2] = 10;
+        matrix[2][5] = 8;
+        matrix[5][2] = 8;
+        matrix[2][9] = 10;
+        matrix[9][2] = 10;
 
-        matrix[3][4] = 4;  matrix[4][3] = 4;
-        matrix[3][9] = 4;  matrix[9][3] = 4;
-        matrix[3][7] = 7;  matrix[7][3] = 7;
+        matrix[3][4] = 4;
+        matrix[4][3] = 4;
+        matrix[3][9] = 4;
+        matrix[9][3] = 4;
+        matrix[3][7] = 7;
+        matrix[7][3] = 7;
 
-        matrix[4][5] = 2;  matrix[5][4] = 2;
-        matrix[4][9] = 5;  matrix[9][4] = 5;
+        matrix[4][5] = 2;
+        matrix[5][4] = 2;
+        matrix[4][9] = 5;
+        matrix[9][4] = 5;
 
-        matrix[5][7] = 3;  matrix[7][5] = 3;
-        matrix[5][8] = 5;  matrix[8][5] = 5;
+        matrix[5][7] = 3;
+        matrix[7][5] = 3;
+        matrix[5][8] = 5;
+        matrix[8][5] = 5;
 
-        matrix[6][7] = 4;  matrix[7][6] = 4;
-        matrix[6][8] = 9;  matrix[8][6] = 9;
+        matrix[6][7] = 4;
+        matrix[7][6] = 4;
+        matrix[6][8] = 9;
+        matrix[8][6] = 9;
 
-        matrix[7][8] = 12;  matrix[8][7] = 12;
+        matrix[7][8] = 12;
+        matrix[8][7] = 12;
 
+        return graph;
+    }
+
+    private static AdjGraph example2() {
+        AdjGraph graph = new AdjGraph(5);
+        int[][] matrix = graph.getMatrix();
+
+        // connections (undirected / symmetric)
+        // matrix[0][1] = 7; matrix[1][0] = 7;
+        matrix[0][2] = 3;
+        matrix[0][4] = 2;
+        matrix[4][0] = 2;
+
+        // matrix[1][2] = 1; matrix[2][1] = 1;
+        matrix[1][4] = 4;
+        matrix[1][3] = 5;
+
+        matrix[3][4] = 4;
+        matrix[4][3] = 4;
+
+        return graph;
+    }
+
+    public static void main(String[] args) {
+        AdjGraph graph = example2();
 
         Graphit graphit = new Graphit();
         graphit.showAdjazenzmatrix(graph);

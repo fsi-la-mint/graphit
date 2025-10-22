@@ -10,9 +10,12 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Multidimensional Scaling (MDS) layout using classical MDS on graph geodesic distances.
- * - Distances use weighted shortest-paths based on the adjacency matrix entries (>0 as edge length).
- * - Embeds into 2D by taking the top-2 eigenpairs of the double-centered matrix.
+ * Multidimensional Scaling (MDS) layout using classical MDS on graph geodesic
+ * distances.
+ * - Distances use weighted shortest-paths based on the adjacency matrix entries
+ * (>0 as edge length).
+ * - Embeds into 2D by taking the top-2 eigenpairs of the double-centered
+ * matrix.
  * Only uses Java standard library.
  */
 public class MdsLayoutEngine implements LayoutEngine {
@@ -31,15 +34,32 @@ public class MdsLayoutEngine implements LayoutEngine {
 
     @Override
     public List<Point> layout(AbstractGraph graph, Dimension area) {
-        int[][] m = graph.exportMatrix();
+        int[][] matrix = graph.exportMatrix();
+        double[][] m = null;
+        m = new double[matrix.length][];
+        for (int i = 0; i < m.length; i++) {
+            int[] row = matrix[i];
+            if (row != null) {
+                m[i] = new double[row.length];
+                for (int j = 0; j < row.length; j++) {
+                    m[i][j] = (double) row[j];
+                }
+            } else {
+                m[i] = null;
+            }
+        }
+
+        // double[][] m = graph.deepClone();
+
         int n = (m == null) ? 0 : m.length;
         List<Point> out = new ArrayList<>(n);
-        if (n == 0) return out;
+        if (n == 0)
+            return out;
 
-    // 1) All-pairs weighted shortest path distances
-    double[][] D = allPairsWeightedShortestPaths(m);
-    // Symmetrize distances to make them suitable for MDS if graph is directed
-    symmetrize(D);
+        // 1) All-pairs weighted shortest path distances
+        double[][] D = allPairsWeightedShortestPaths(m);
+        // Symmetrize distances to make them suitable for MDS if graph is directed
+        symmetrize(D);
 
         // 2) Classical MDS: B = -1/2 * J * (D^2) * J
         double[][] B = buildDoubleCenteredMatrix(D);
@@ -54,11 +74,13 @@ public class MdsLayoutEngine implements LayoutEngine {
         double[] Y = new double[n];
         if (e1.lambda > 1e-9 && e1.v != null) {
             double s = Math.sqrt(e1.lambda);
-            for (int i = 0; i < n; i++) X[i] = e1.v[i] * s;
+            for (int i = 0; i < n; i++)
+                X[i] = e1.v[i] * s;
         }
         if (e2.lambda > 1e-9 && e2.v != null) {
             double s = Math.sqrt(e2.lambda);
-            for (int i = 0; i < n; i++) Y[i] = e2.v[i] * s;
+            for (int i = 0; i < n; i++)
+                Y[i] = e2.v[i] * s;
         }
 
         // 5) Normalize to area with padding
@@ -67,18 +89,26 @@ public class MdsLayoutEngine implements LayoutEngine {
         double minX = Double.POSITIVE_INFINITY, maxX = Double.NEGATIVE_INFINITY;
         double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < n; i++) {
-            if (X[i] < minX) minX = X[i];
-            if (X[i] > maxX) maxX = X[i];
-            if (Y[i] < minY) minY = Y[i];
-            if (Y[i] > maxY) maxY = Y[i];
+            if (X[i] < minX)
+                minX = X[i];
+            if (X[i] > maxX)
+                maxX = X[i];
+            if (Y[i] < minY)
+                minY = Y[i];
+            if (Y[i] > maxY)
+                maxY = Y[i];
         }
         if (!(maxX > minX)) { // degenerate
-            for (int i = 0; i < n; i++) X[i] = i;
-            minX = 0; maxX = Math.max(1, n - 1);
+            for (int i = 0; i < n; i++)
+                X[i] = i;
+            minX = 0;
+            maxX = Math.max(1, n - 1);
         }
         if (!(maxY > minY)) {
-            for (int i = 0; i < n; i++) Y[i] = 0;
-            minY = 0; maxY = 1;
+            for (int i = 0; i < n; i++)
+                Y[i] = 0;
+            minY = 0;
+            maxY = 1;
         }
 
         double pad = Math.min(Math.min(w, h) * 0.2, padding);
@@ -95,7 +125,7 @@ public class MdsLayoutEngine implements LayoutEngine {
         return out;
     }
 
-    private static double[][] allPairsWeightedShortestPaths(int[][] m) {
+    private static double[][] allPairsWeightedShortestPaths(double[][] m) {
         int n = m.length;
         double INF = 1e12;
         double[][] dist = new double[n][n];
@@ -110,22 +140,32 @@ public class MdsLayoutEngine implements LayoutEngine {
                 }
             }
         }
+
         // Floyd-Warshall for weighted graphs (assuming non-negative weights)
         for (int k = 0; k < n; k++) {
             for (int i = 0; i < n; i++) {
                 double dik = dist[i][k];
-                if (dik == INF) continue;
+                if (dik == INF)
+                    continue;
                 for (int j = 0; j < n; j++) {
                     double v = dik + dist[k][j];
-                    if (v < dist[i][j]) dist[i][j] = v;
+                    if (v < dist[i][j])
+                        dist[i][j] = v;
                 }
             }
         }
+
         // Replace unreachable distances with a large finite value (slightly above max)
         double max = 0;
-        for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) if (dist[i][j] < INF && dist[i][j] > max) max = dist[i][j];
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                if (dist[i][j] < INF && dist[i][j] > max)
+                    max = dist[i][j];
         double far = (max <= 0) ? 1.0 : (max * 1.5 + 1.0);
-        for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) if (dist[i][j] >= INF) dist[i][j] = far;
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                if (dist[i][j] >= INF)
+                    dist[i][j] = far;
         return dist;
     }
 
@@ -136,10 +176,14 @@ public class MdsLayoutEngine implements LayoutEngine {
                 double a = D[i][j];
                 double b = D[j][i];
                 double s;
-                if (Double.isFinite(a) && Double.isFinite(b)) s = 0.5 * (a + b);
-                else if (Double.isFinite(a)) s = a;
-                else if (Double.isFinite(b)) s = b;
-                else s = a; // both non-finite, keep as-is
+                if (Double.isFinite(a) && Double.isFinite(b))
+                    s = 0.5 * (a + b);
+                else if (Double.isFinite(a))
+                    s = a;
+                else if (Double.isFinite(b))
+                    s = b;
+                else
+                    s = a; // both non-finite, keep as-is
                 D[i][j] = D[j][i] = s;
             }
         }
@@ -163,8 +207,10 @@ public class MdsLayoutEngine implements LayoutEngine {
                 totalMean += D2[i][j];
             }
         }
-        for (int i = 0; i < n; i++) rowMean[i] /= n;
-        for (int j = 0; j < n; j++) colMean[j] /= n;
+        for (int i = 0; i < n; i++)
+            rowMean[i] /= n;
+        for (int j = 0; j < n; j++)
+            colMean[j] /= n;
         totalMean /= (n * n);
 
         double[][] B = new double[n][n];
@@ -179,22 +225,29 @@ public class MdsLayoutEngine implements LayoutEngine {
     private static class EigenPair {
         double lambda;
         double[] v;
-        EigenPair(double lambda, double[] v) { this.lambda = lambda; this.v = v; }
+
+        EigenPair(double lambda, double[] v) {
+            this.lambda = lambda;
+            this.v = v;
+        }
     }
 
     private static EigenPair powerIteration(double[][] A, int iterations) {
         int n = A.length;
         double[] v = new double[n];
         Random rnd = new Random(123);
-        for (int i = 0; i < n; i++) v[i] = rnd.nextDouble();
+        for (int i = 0; i < n; i++)
+            v[i] = rnd.nextDouble();
         normalize(v);
 
         double lambda = 0;
         for (int it = 0; it < iterations; it++) {
             double[] Av = multiply(A, v);
             double norm = norm(Av);
-            if (norm < 1e-12) break;
-            for (int i = 0; i < n; i++) v[i] = Av[i] / norm;
+            if (norm < 1e-12)
+                break;
+            for (int i = 0; i < n; i++)
+                v[i] = Av[i] / norm;
             lambda = rayleighQuotient(A, v);
         }
         return new EigenPair(lambda, v);
@@ -218,7 +271,8 @@ public class MdsLayoutEngine implements LayoutEngine {
         double[] y = new double[n];
         for (int i = 0; i < n; i++) {
             double s = 0;
-            for (int j = 0; j < n; j++) s += A[i][j] * x[j];
+            for (int j = 0; j < n; j++)
+                s += A[i][j] * x[j];
             y[i] = s;
         }
         return y;
@@ -226,21 +280,28 @@ public class MdsLayoutEngine implements LayoutEngine {
 
     private static void normalize(double[] v) {
         double n = norm(v);
-        if (n < 1e-12) return;
-        for (int i = 0; i < v.length; i++) v[i] /= n;
+        if (n < 1e-12)
+            return;
+        for (int i = 0; i < v.length; i++)
+            v[i] /= n;
     }
 
     private static double norm(double[] v) {
         double s = 0;
-        for (double a : v) s += a * a;
+        for (double a : v)
+            s += a * a;
         return Math.sqrt(s);
     }
 
     private static double rayleighQuotient(double[][] A, double[] v) {
         double[] Av = multiply(A, v);
         double num = 0, den = 0;
-        for (int i = 0; i < v.length; i++) { num += v[i] * Av[i]; den += v[i] * v[i]; }
-        if (den < 1e-12) return 0;
+        for (int i = 0; i < v.length; i++) {
+            num += v[i] * Av[i];
+            den += v[i] * v[i];
+        }
+        if (den < 1e-12)
+            return 0;
         return num / den;
     }
 }

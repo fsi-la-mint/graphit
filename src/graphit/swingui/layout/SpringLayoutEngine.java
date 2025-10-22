@@ -29,10 +29,11 @@ public class SpringLayoutEngine implements LayoutEngine {
 
     @Override
     public List<Point> layout(AbstractGraph graph, Dimension area) {
-        int[][] m = graph.exportMatrix();
+        double[][] m = graph.deepClone();
         int n = (m == null) ? 0 : m.length;
         List<Point> positions = new ArrayList<>(n);
-        if (n == 0) return positions;
+        if (n == 0)
+            return positions;
 
         int width = Math.max(1, area.width);
         int height = Math.max(1, area.height);
@@ -40,12 +41,16 @@ public class SpringLayoutEngine implements LayoutEngine {
         double minX = pad, minY = pad, maxX = width - pad, maxY = height - pad;
 
         // Compute average absolute edge weight for normalization
-        double sumW = 0.0; int cntW = 0;
+        double sumW = 0.0;
+        int cntW = 0;
         if (m != null) {
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
-                    int wij = m[i][j];
-                    if (wij != 0) { sumW += Math.abs((double) wij); cntW++; }
+                    double wij = m[i][j];
+                    if (wij != 0) {
+                        sumW += Math.abs((double) wij);
+                        cntW++;
+                    }
                 }
             }
         }
@@ -71,7 +76,10 @@ public class SpringLayoutEngine implements LayoutEngine {
 
         for (int iter = 0; iter < iterations; iter++) {
             // reset
-            for (int i = 0; i < n; i++) { dx[i] = 0; dy[i] = 0; }
+            for (int i = 0; i < n; i++) {
+                dx[i] = 0;
+                dy[i] = 0;
+            }
 
             // repulsive forces between all pairs
             for (int i = 0; i < n; i++) {
@@ -83,8 +91,10 @@ public class SpringLayoutEngine implements LayoutEngine {
                     double force = (k * k) / dist; // repulsive
                     double fx = force * dxij / dist;
                     double fy = force * dyij / dist;
-                    dx[i] += fx; dy[i] += fy;
-                    dx[j] -= fx; dy[j] -= fy;
+                    dx[i] += fx;
+                    dy[i] += fy;
+                    dx[j] -= fx;
+                    dy[j] -= fy;
                 }
             }
 
@@ -95,7 +105,10 @@ public class SpringLayoutEngine implements LayoutEngine {
                         // Normalize weight so typical edges are ~1.0 influence
                         double w = Math.abs((double) m[i][j]) / avgW;
                         // Clamp to keep the system stable
-                        if (w < 0.1) w = 0.1; else if (w > 10.0) w = 10.0;
+                        if (w < 0.1)
+                            w = 0.1;
+                        else if (w > 10.0)
+                            w = 10.0;
                         double dxij = x[i] - x[j];
                         double dyij = y[i] - y[j];
                         double dist = Math.sqrt(dxij * dxij + dyij * dyij) + 0.01;
@@ -103,8 +116,10 @@ public class SpringLayoutEngine implements LayoutEngine {
                         double fx = force * dxij / dist;
                         double fy = force * dyij / dist;
                         // i pulls towards j (negative of dxij sign)
-                        dx[i] -= fx; dy[i] -= fy;
-                        dx[j] += fx; dy[j] += fy;
+                        dx[i] -= fx;
+                        dy[i] -= fy;
+                        dx[j] += fx;
+                        dy[j] += fy;
                     }
                 }
             }
@@ -125,7 +140,8 @@ public class SpringLayoutEngine implements LayoutEngine {
 
             // cool
             temperature *= 0.95;
-            if (temperature < 0.1) break;
+            if (temperature < 0.1)
+                break;
         }
 
         for (int i = 0; i < n; i++) {

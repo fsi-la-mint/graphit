@@ -39,4 +39,21 @@ public abstract class AbstractGraph {
             trackList.add(Integer.valueOf(tracked[i]));
         }
     }
+
+    public double[][] deepClone() {
+        int[][] m = this.exportMatrix();
+        double[][] undirected = new double[m.length][m.length];
+
+        for (int i = 0; i < m.length; i++) {
+            for (int j = i + 1; j < m.length; j++) {
+                if (m[i][j] == 0) {
+                    m[i][j] = m[j][i];
+                } else {
+                    m[j][i] = m[i][j];
+                }
+            }
+        }
+
+        return undirected;
+    }
 }

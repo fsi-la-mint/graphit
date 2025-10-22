@@ -14,10 +14,11 @@ import java.util.List;
 public class CircularLayoutEngine implements LayoutEngine {
     @Override
     public List<Point> layout(AbstractGraph graph, Dimension area) {
-        int[][] m = graph.exportMatrix();
+        double[][] m = graph.deepClone();
         int n = (m == null) ? 0 : m.length;
         List<Point> positions = new ArrayList<>(n);
-        if (n == 0) return positions;
+        if (n == 0)
+            return positions;
 
         int width = Math.max(1, area.width);
         int height = Math.max(1, area.height);

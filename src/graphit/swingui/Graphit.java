@@ -28,6 +28,7 @@ public class Graphit extends JFrame {
         tabbedPane.addTab("Home", home);
 
         // setSpring(); // Default layout engine
+        // setCircular();
         setMDS(); // Default layout engine
         setVisible(true);
     }
@@ -61,7 +62,7 @@ public class Graphit extends JFrame {
             currentGraphPanel.setLayoutEngine(currentEngine, true);
     }
 
-    public void setMethod2() {
+    public void setCircular() {
         this.currentEngine = new CircularLayoutEngine();
         if (currentGraphPanel != null)
             currentGraphPanel.setLayoutEngine(currentEngine, true);
